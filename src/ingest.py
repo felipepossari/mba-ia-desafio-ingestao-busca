@@ -38,30 +38,32 @@ def store_documents(documents: list[Document]):
     store.add_documents(documents=documents, ids=ids)
 
 
-def ingest_pdf():
-    check_variables()
-    docs = load_pdf()
-
-    splittedText = RecursiveCharacterTextSplitter(
+def enrich_documents(docs: list[Document]) -> list[Document]:
+    splitted_text = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=150,
         add_start_index=False
     ).split_documents(docs)
 
-    if not splittedText:
+    if not splitted_text:
         raise RuntimeError("No documents found")
 
     enriched_docs: list[Document] = []
-    for doc in splittedText:
+    for doc in splitted_text:
         meta = {k: v for k, v in doc.metadata.items() if v not in ("", None)}
         enriched_doc = Document(
             page_content=doc.page_content,
             metadata=meta,
         )
         enriched_docs.append(enriched_doc)
-    store_documents(enriched_docs)
+    return enriched_docs
 
-    pass
+
+def ingest_pdf():
+    check_variables()
+    docs = load_pdf()
+    enriched_docs = enrich_documents(docs)
+    store_documents(enriched_docs)
 
 
 if __name__ == "__main__":
